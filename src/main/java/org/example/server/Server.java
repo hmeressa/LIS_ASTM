@@ -12,71 +12,62 @@ import static org.example.client.Commands.*;
 
 public class Server {
     private static final int LISTEN_PORT = 6668;
-    public static Vector<String> vecMessages = new Vector<String>();
+    public static Vector<String> vecMessages = new Vector<>();
     private static int currentMsgCount = 0;
 
     public static void startServer() {
         try (ServerSocket serverSocket = new ServerSocket(LISTEN_PORT)) {
             System.out.println("Server started. Listening for connections...");
-//            while (true) {
-                System.out.println("Server started. Listening for connections...");
+            while (true) {
                 Socket clientSocket = serverSocket.accept();
                 System.out.println("Client connected: " + clientSocket);
                 ClientHandler clientHandler = new ClientHandler(clientSocket);
                 new Thread(clientHandler).start();
-//            }
+            }
         } catch (IOException e) {
             e.printStackTrace();
         }
     }
-    private record ClientHandler(Socket clientSocket) implements Runnable {
+    private static class ClientHandler implements Runnable {
+        private Socket clientSocket;
+        public ClientHandler(Socket clientSocket) {
+            this.clientSocket = clientSocket;
+        }
         @Override
         public void run() {
-            try {
-                BufferedReader inFromClient = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
-                DataOutputStream outToClient = new DataOutputStream(clientSocket.getOutputStream());
-                String currentMsg = "";
+            try (BufferedReader inFromClient = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
+                 DataOutputStream outToClient = new DataOutputStream(clientSocket.getOutputStream())) {
                 int clientIntMessage;
-                clientIntMessage = inFromClient.read();
-//                while (true) {
-                    while (clientIntMessage != ETX.getValue() || clientIntMessage != -1) {
-                        clientIntMessage = (char) inFromClient.read();
-                        System.out.println("message :"+clientIntMessage);
-//                        currentMsg += String.valueOf(Character.toChars(clientIntMessage));
-                        if (clientIntMessage == CR.getValue()) {
-//                            outToClient.writeBytes("" + ACK.getValue());
-                            System.out.println("[ACK] on Analyzer [ENQ]");
+                while (true) {
+                    clientIntMessage = inFromClient.read();
+                    System.out.println("message: " + clientIntMessage);
+
+                    if (clientIntMessage == CR.getValue()) {
+                        System.out.println("[ACK] on Analyzer [ENQ]");
+                    } else if (clientIntMessage == STX.getValue()) {
+                        System.out.println("Analyzer [ACK]");
+                        if (vecMessages.size() == currentMsgCount) {
+                            vecMessages.clear();
+                            currentMsgCount = 0;
+                            outToClient.writeBytes("" + ETX);
+                            System.out.println("Host [EOT]");
+                        } else {
+                            String msg = vecMessages.get(currentMsgCount++);
+                            outToClient.writeBytes(msg);
                         }
-                        else if (clientIntMessage == STX.getValue()) {
-                            System.out.println("Analyzer [ACK]");
-                            if (vecMessages.size() == currentMsgCount) {
-                                vecMessages.clear();
-                                currentMsgCount = 0;
-                                outToClient.writeBytes("" + ETX);
-                                System.out.println("Host [EOT]");
-                            } else {
-                                String msg = (String) vecMessages.get(currentMsgCount++);
-                                outToClient.writeBytes(msg);
-                            }
-                        }
-                        else if (clientIntMessage == LF.getValue()) {
-                            outToClient.writeBytes("" + LF);
-                        }
-//                        else if (clientIntMessage == NAK.getValue()) {
-//                            System.out.println(" Analyzer sent [NAK] ");
-//                        }
-                        else{
-                            System.out.println("error two");
-                        }
+                    } else if (clientIntMessage == LF.getValue()) {
+                        outToClient.writeBytes("" + LF);
+                    } else {
+                        System.out.println("error two");
                     }
-//                    System.out.println(currentMsg);
-                    clientIntMessage = 0;
-                    currentMsg = "";
-//                }
+
+                    if (clientIntMessage == ETX.getValue() || clientIntMessage == -1) {
+                        break;
+                    }
+                }
             } catch (IOException e) {
                 e.printStackTrace();
             }
         }
     }
-
 }
