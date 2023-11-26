@@ -1,4 +1,4 @@
-package org.example.model;
+package org.example.server.model;
 
 public class Patient {
     private int id;

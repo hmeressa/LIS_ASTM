@@ -1,24 +1,23 @@
 package org.example.client;
 
-import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.InputStreamReader;
 import java.io.PrintWriter;
-import java.net.ServerSocket;
 import java.net.Socket;
 
 public class Client {
     private static final String HOST = "localhost";
-    private static final int SERVER_PORT = 6663;
+    private static final int SERVER_PORT = 6664;
     public static void sendMessage(String message) {
         try (Socket socket = new Socket(HOST, SERVER_PORT);
              PrintWriter out = new PrintWriter(socket.getOutputStream(), true)) {
             out.println(message);
             System.out.println("Message sent to the server: " + message);
         } catch (IOException e) {
+            System.err.println("Error sending message: " + e.getMessage());
             e.printStackTrace();
         }
     }
+
 
 //    public static void readServerResponse() {
 //        try (ServerSocket serverSocket = new ServerSocket(CLIENT_PORT)) {

@@ -1,69 +1,82 @@
-package org.example;
+package org.example.server;
 
+import java.io.BufferedReader;
+import java.io.DataOutputStream;
 import java.io.IOException;
-import java.io.PrintWriter;
+import java.io.InputStreamReader;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.util.Scanner;
+import java.util.Vector;
+
+import static org.example.client.Commands.*;
 
 public class Server {
-    private static final int LIS_PORT = 6666;
-    private static final String BYE_COMMAND = "bye";
+    private static final int LISTEN_PORT = 6668;
+    public static Vector<String> vecMessages = new Vector<String>();
+    private static int currentMsgCount = 0;
 
     public static void startServer() {
-        try (ServerSocket serverSocket = new ServerSocket(LIS_PORT)) {
+        try (ServerSocket serverSocket = new ServerSocket(LISTEN_PORT)) {
             System.out.println("Server started. Listening for connections...");
-            while (true) {
-                Socket clientSocket = serverSocket.accept(); // Wait for a client to connect
+//            while (true) {
+                System.out.println("Server started. Listening for connections...");
+                Socket clientSocket = serverSocket.accept();
                 System.out.println("Client connected: " + clientSocket);
                 ClientHandler clientHandler = new ClientHandler(clientSocket);
                 new Thread(clientHandler).start();
-            }
+//            }
         } catch (IOException e) {
             e.printStackTrace();
         }
     }
-
-    private static class ClientHandler implements Runnable {
-        private final Socket clientSocket;
-
-        public ClientHandler(Socket clientSocket) {
-            this.clientSocket = clientSocket;
-        }
-
+    private record ClientHandler(Socket clientSocket) implements Runnable {
         @Override
         public void run() {
-            try (Scanner in = new Scanner(clientSocket.getInputStream());
-                 PrintWriter out = new PrintWriter(clientSocket.getOutputStream(), true)) {
-                out.println("Connected to the server. Type 'bye' to exit.");
-                Server.readASTMMessage(clientSocket);
-                String message;
-                do {
-                    message = in.nextLine();
-                    out.println("Server: " + message); // Echo the message back to the client
-                } while (!message.equalsIgnoreCase(BYE_COMMAND));
-
-                System.out.println("Client disconnected: " + clientSocket);
-                clientSocket.close();
+            try {
+                BufferedReader inFromClient = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
+                DataOutputStream outToClient = new DataOutputStream(clientSocket.getOutputStream());
+                String currentMsg = "";
+                int clientIntMessage;
+                clientIntMessage = inFromClient.read();
+//                while (true) {
+                    while (clientIntMessage != ETX.getValue() || clientIntMessage != -1) {
+                        clientIntMessage = (char) inFromClient.read();
+                        System.out.println("message :"+clientIntMessage);
+//                        currentMsg += String.valueOf(Character.toChars(clientIntMessage));
+                        if (clientIntMessage == CR.getValue()) {
+//                            outToClient.writeBytes("" + ACK.getValue());
+                            System.out.println("[ACK] on Analyzer [ENQ]");
+                        }
+                        else if (clientIntMessage == STX.getValue()) {
+                            System.out.println("Analyzer [ACK]");
+                            if (vecMessages.size() == currentMsgCount) {
+                                vecMessages.clear();
+                                currentMsgCount = 0;
+                                outToClient.writeBytes("" + ETX);
+                                System.out.println("Host [EOT]");
+                            } else {
+                                String msg = (String) vecMessages.get(currentMsgCount++);
+                                outToClient.writeBytes(msg);
+                            }
+                        }
+                        else if (clientIntMessage == LF.getValue()) {
+                            outToClient.writeBytes("" + LF);
+                        }
+//                        else if (clientIntMessage == NAK.getValue()) {
+//                            System.out.println(" Analyzer sent [NAK] ");
+//                        }
+                        else{
+                            System.out.println("error two");
+                        }
+                    }
+//                    System.out.println(currentMsg);
+                    clientIntMessage = 0;
+                    currentMsg = "";
+//                }
             } catch (IOException e) {
                 e.printStackTrace();
             }
         }
     }
 
-    public static void readASTMMessage(Socket clientSocket) {
-        try (Scanner in = new Scanner(clientSocket.getInputStream())) {
-            StringBuilder ASTMMessageBuilder = new StringBuilder();
-            PrintWriter out = new PrintWriter(clientSocket.getOutputStream());
-            String line;
-            while (!(line = in.nextLine()).isEmpty()) {
-                ASTMMessageBuilder.append(line).append("\n");
-            }
-            String ASTMMessage = ASTMMessageBuilder.toString();
-            System.out.println("Received ASTM message: " + ASTMMessage);
-            out.println("The response from the client is " + ASTMMessage);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
 }
