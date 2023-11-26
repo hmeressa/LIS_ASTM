@@ -5,8 +5,9 @@ import java.io.PrintWriter;
 import java.net.Socket;
 
 public class Client {
-    private static final String HOST = "localhost";
-    private static final int SERVER_PORT = 6664;
+//    private static final String HOST = "172.16.33.103";
+    private static final String HOST = "192.168.93.58";
+    private static final int SERVER_PORT = 6663;
     public static void sendMessage(String message) {
         try (Socket socket = new Socket(HOST, SERVER_PORT);
              PrintWriter out = new PrintWriter(socket.getOutputStream(), true)) {

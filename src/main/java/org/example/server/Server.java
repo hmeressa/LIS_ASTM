@@ -11,18 +11,22 @@ import java.util.Vector;
 import static org.example.client.Commands.*;
 
 public class Server {
-    private static final int LISTEN_PORT = 6668;
-    public static Vector<String> vecMessages = new Vector<>();
-    private static int currentMsgCount = 0;
+    private static final int LIS_PORT = 6667;
+    private static final String BYE_COMMAND = "bye";
 
     public static void startServer() {
         try (ServerSocket serverSocket = new ServerSocket(LISTEN_PORT)) {
             System.out.println("Server started. Listening for connections...");
+            try{
             while (true) {
-                Socket clientSocket = serverSocket.accept();
-                System.out.println("Client connected: " + clientSocket);
-                ClientHandler clientHandler = new ClientHandler(clientSocket);
-                new Thread(clientHandler).start();
+
+                    Socket clientSocket = serverSocket.accept(); // Wait for a client to connect
+                    System.out.println("Client connected: " + clientSocket);
+                    ClientHandler clientHandler = new ClientHandler(clientSocket);
+                    new Thread(clientHandler).start();
+            }
+            }catch (Exception ignored){
+
             }
         } catch (IOException e) {
             e.printStackTrace();

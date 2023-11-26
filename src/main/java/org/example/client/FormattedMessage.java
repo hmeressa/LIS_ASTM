@@ -15,9 +15,28 @@ public class FormattedMessage {
                     patientInfo + Commands.CR.getValue() +
                     patientOrder + Commands.CR.getValue() +
                     Commands.ETX.getValue();
+
+            // Calculate and append the checksum for the constructed message
+            String checksum = getCheckSum(message);
+            message += checksum + Commands.CR.getValue() + Commands.LF.getValue();
+
             return message;
         } catch (Exception e) {
             return "";
         }
+}
+
+    public static String getCheckSum(String msg) {
+        int sum = 0;
+        for (int i = 0; i < msg.length(); i++) {
+            sum += msg.charAt(i);
+        }
+        sum += 16;
+        sum = sum % 256;
+        String checksum = Integer.toHexString(sum).toUpperCase();
+        if (checksum.length() == 1) {
+            checksum = "0" + checksum;
+        }
+        return checksum;
     }
 }
