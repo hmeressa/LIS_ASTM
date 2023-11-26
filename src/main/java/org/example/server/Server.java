@@ -11,36 +11,36 @@ import java.util.Vector;
 import static org.example.client.Commands.*;
 
 public class Server {
-    private static final int LIS_PORT = 6667;
-    private static final String BYE_COMMAND = "bye";
+    private static final int LISTEN_PORT = 6668;
+    public static Vector<String> vecMessages = new Vector<>();
+    private static int currentMsgCount = 0;
 
     public static void startServer() {
         try (ServerSocket serverSocket = new ServerSocket(LISTEN_PORT)) {
             System.out.println("Server started. Listening for connections...");
-            try{
             while (true) {
-
-                    Socket clientSocket = serverSocket.accept(); // Wait for a client to connect
-                    System.out.println("Client connected: " + clientSocket);
-                    ClientHandler clientHandler = new ClientHandler(clientSocket);
-                    new Thread(clientHandler).start();
-            }
-            }catch (Exception ignored){
-
+                Socket clientSocket = serverSocket.accept();
+                System.out.println("Client connected: " + clientSocket);
+                ClientHandler clientHandler = new ClientHandler(clientSocket);
+                new Thread(clientHandler).start();
             }
         } catch (IOException e) {
             e.printStackTrace();
         }
     }
+
     private static class ClientHandler implements Runnable {
         private Socket clientSocket;
+
         public ClientHandler(Socket clientSocket) {
             this.clientSocket = clientSocket;
         }
+
         @Override
         public void run() {
             try (BufferedReader inFromClient = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
                  DataOutputStream outToClient = new DataOutputStream(clientSocket.getOutputStream())) {
+
                 int clientIntMessage;
                 while (true) {
                     clientIntMessage = inFromClient.read();
