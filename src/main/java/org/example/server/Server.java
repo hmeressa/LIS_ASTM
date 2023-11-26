@@ -17,7 +17,7 @@ public class Server {
 
     public static void startServer() {
         try (ServerSocket serverSocket = new ServerSocket(LISTEN_PORT)) {
-            System.out.println("Server started. Listening for connections...");
+            System.out.println("Server started. Listening for connections.........");
             while (true) {
                 Socket clientSocket = serverSocket.accept();
                 System.out.println("Client connected: " + clientSocket);
